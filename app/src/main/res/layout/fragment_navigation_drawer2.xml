@@ -1,0 +1,116 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#EEE"
+    android:clickable="true"
+    tools:context="com.abraham.android.bounce.NavigationDrawerFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Switch
+            android:id="@+id/host_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="25dp"
+            android:checked="false"
+            android:text="Enable Hosting" />
+
+        <Switch
+            android:id="@+id/connect_to_host_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/host_switch"
+            android:layout_centerHorizontal="true"
+            android:checked="false"
+            android:text="Connect to Host" />
+
+        <TextView
+            android:id="@+id/port_specifier_textview"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/connect_to_host_switch"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="40dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/ip_specifier_textview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/port_specifier_textview"
+            android:layout_centerHorizontal="true"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/server_message_textview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ip_specifier_textview"
+            android:layout_centerHorizontal="true"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/input_ip_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ip_specifier_textview"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="108dp"
+            android:text="Input IP"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/input_ip_edittext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignRight="@+id/input_port_edittext"
+            android:layout_below="@+id/input_ip_textview"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/input_port_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/input_ip_edittext"
+            android:layout_centerHorizontal="true"
+            android:text="Input Port"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/input_port_edittext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/input_port_textview"
+            android:layout_centerHorizontal="true"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/connect_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/input_port_edittext"
+            android:layout_centerHorizontal="true"
+            android:text="Connect"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/response_textview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/input_ip_edittext"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginBottom="21dp"
+            android:layout_marginLeft="12dp"
+            android:layout_marginStart="12dp"
+            android:text=""
+            android:visibility="gone" />
+
+    </LinearLayout>
+</RelativeLayout>
