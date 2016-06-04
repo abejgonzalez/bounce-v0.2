@@ -2,9 +2,11 @@ package com.gonza.abraham.bounce;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -22,6 +24,7 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.abraham.android.bounce.About;
 import com.abraham.android.bounce.NavigationDrawerFragment;
@@ -41,11 +44,20 @@ import com.spotify.sdk.android.player.PlayerStateCallback;
 import com.spotify.sdk.android.player.Spotify;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 
 public class MusicScreen extends AppCompatActivity implements NavigationDrawerFragment.OnFragmentInteractionListener, PlayerNotificationCallback, ConnectionStateCallback {
@@ -75,6 +87,10 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
     boolean refreshing = false;
     private Toolbar toolbar;
     private Spinner spinner_nav;
+
+    private int SETTING_REQUEST = 100;
+    String message = "";
+    ServerSocket serverSocket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -386,6 +402,24 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 });
             }
         }
+        else if(requestCode == SETTING_REQUEST){
+            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+            /*Find out if the Activity wants to connect or not*/
+            if(pref.getBoolean("DoConnection",false)){
+                /*Create a connection*/
+                if(pref.getBoolean("Host", false)){
+                    /*Hosting AKA is a server*/
+                    Thread socketServerThread = new Thread(new SocketServerThread());
+                    socketServerThread.start();
+                }
+                else{
+                    /*Not hosting AKA is a client*/
+                    MyClientTask myTask = new MyClientTask(pref.getString("IpAddress", "Default"), Integer.parseInt(pref.getString("PortNumber", "Default")));
+                    myTask.execute();
+                }
+            }
+        }
     }
 
     @Override
@@ -426,6 +460,13 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
     @Override
     protected void onDestroy() {
         Spotify.destroyPlayer(this);
+        if (serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         super.onDestroy();
         Log.d("MainActivity", "Spotify Player destroyed");
     }
@@ -872,8 +913,128 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 startActivity(sendIntent);
             } else if (recievedString == "Settings") {
                 sendIntent = new Intent(getApplicationContext(), Settings.class);
-                startActivity(sendIntent);
+                startActivityForResult(sendIntent, SETTING_REQUEST);
             }
         }
     }
+
+    public class MyClientTask extends AsyncTask<Void, Void, Void> {
+        String dstAddress;
+        int dstPort;
+        String response = "";
+        MyClientTask(String addr, int port) {
+            dstAddress = addr;
+            dstPort = port;
+        }
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            Socket socket = null;
+            try {
+                socket = new Socket(dstAddress, dstPort);
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                InputStream inputStream = socket.getInputStream();
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    byteArrayOutputStream.write(buffer, 0, bytesRead);
+                    response += byteArrayOutputStream.toString("UTF-8");
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+                response = "UnknownHostException: " + e.toString();
+            } catch (IOException e) {
+                e.printStackTrace();
+                response = "IOException: " + e.toString();
+            } finally {
+                if (socket != null) {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) {
+            /*Recieved from the server*/
+
+            super.onPostExecute(result);
+        }
+    }
+
+    private class SocketServerThread extends Thread {
+        //static final int SocketServerPORT = 8080;
+        int count = 0;
+        int mLocalPort;
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(MusicScreen.this);
+        @Override
+        public void run() {
+            try {
+                serverSocket = new ServerSocket(Integer.parseInt(pref.getString("PortNumber", "Default")));
+
+                while (true) {
+                    Socket socket = serverSocket.accept();
+                    count++;
+                    Calendar cal = Calendar.getInstance();
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+                    message = "This is from the serverThread" + sdf.format(cal.getTime());
+                    MusicScreen.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            /*Message recieved from the client*/
+                            //Use message
+                        }
+                    });
+                    SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(socket, count);
+                    socketServerReplyThread.run();
+                }
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class SocketServerReplyThread extends Thread {
+        int cnt;
+        private Socket hostThreadSocket;
+
+        SocketServerReplyThread(Socket socket, int c) {
+            hostThreadSocket = socket;
+            cnt = c;
+        }
+
+        @Override
+        public void run() {
+            OutputStream outputStream;
+            Calendar cal = Calendar.getInstance();
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+            String msgReply = "Server->Client" + sdf.format(cal.getTime());
+            try {
+                outputStream = hostThreadSocket.getOutputStream();
+                PrintStream printStream = new PrintStream(outputStream);
+                printStream.print(msgReply);
+                printStream.close();
+                message = "Server->Server" + sdf.format(cal.getTime());
+                MusicScreen.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //serverMessage.setText(message);
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+                message = "Something wrong! " + e.toString();
+            }
+            MusicScreen.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //serverMessage.setText(message);
+                }
+            });
+        }
+    }
+
 }

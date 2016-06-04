@@ -15,6 +15,11 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
 
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+import java.net.InetAddress;
+import java.net.SocketException;
+
 public class Settings extends AppCompatActivity {
 
     SharedPreferences mPref;
@@ -35,6 +40,8 @@ public class Settings extends AppCompatActivity {
 
         mPref = PreferenceManager.getDefaultSharedPreferences(this);
         mEditor = mPref.edit();
+        mEditor.clear();
+        mEditor.putBoolean("DoConnection", false);
 
         mIpAddressTextView = (EditText) findViewById(R.id.ip_address_edittext);
         mPortNumberTextView = (EditText) findViewById(R.id.port_number_edittext);
@@ -42,16 +49,19 @@ public class Settings extends AppCompatActivity {
         mConnSetButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mEditor.putBoolean("DoConnection", true);
                 if (mHostSwitch.isChecked()) {
                     mEditor.clear();
+                    mEditor.putBoolean("Host",true);
                     mEditor.putString("PortNumber", mPortNumberTextView.getText().toString());
                     while (!mEditor.commit()) {
                         Log.d("SettingsActivity", "Committing to preferences");
                     }
                 } else {
                     mEditor.clear();
+                    mEditor.putBoolean("Host",false);
                     mEditor.putString("PortNumber", mPortNumberTextView.getText().toString());
-                    mEditor.putString("IpAddress", mIpAddressTextView.toString());
+                    mEditor.putString("IpAddress", mIpAddressTextView.getText().toString());
                     while (!mEditor.commit()) {
                         Log.d("SettingsActivity", "Committing to preferences");
                     }
@@ -68,6 +78,7 @@ public class Settings extends AppCompatActivity {
                         public void run() {
                             mConnSetButton.setText("Set");
                             mIpAddressTextView.setFocusable(false);
+                            mIpAddressTextView.setText(getIpAddress());
                         }
                     });
                 } else {
@@ -103,5 +114,26 @@ public class Settings extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private String getIpAddress() {
+        String ip = "";
+        try {
+            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (enumNetworkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = enumNetworkInterfaces.nextElement();
+                Enumeration<InetAddress> enumInetAddress = networkInterface.getInetAddresses();
+                while (enumInetAddress.hasMoreElements()) {
+                    InetAddress inetAddress = enumInetAddress.nextElement();
+                    if (inetAddress.isSiteLocalAddress()) {
+                        ip = inetAddress.getHostAddress();
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+            ip = "Something Wrong! " + e.toString();
+        }
+        return ip;
     }
 }
