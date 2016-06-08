@@ -26,7 +26,6 @@ public class NavigationDrawerFragment extends Fragment {
     private boolean mFromSavedInstanceState;
     private View containerView;
     private View mLeftDrawerView;
-    private View mRightDrawerView;
 
     public NavigationDrawerFragment() {
         // Required empty public constructor
@@ -49,7 +48,6 @@ public class NavigationDrawerFragment extends Fragment {
         super.onCreate(savedInstanceState);
         mUserLearnedDrawer = Boolean.valueOf(readFromPreferences(getActivity(), KEY_USER_LEARNED_DRAWER, "false"));
         mLeftDrawerView = getActivity().findViewById(R.id.fragment_navigation_drawer);
-        mRightDrawerView = getActivity().findViewById(R.id.fragment_navigation_drawer2);
         setHasOptionsMenu(true);
         if (savedInstanceState != null) {
             mFromSavedInstanceState = true;
@@ -114,6 +112,11 @@ public class NavigationDrawerFragment extends Fragment {
         });
     }
 
+    public void closeDrawer(){
+      //  mDrawerLayout.closeDrawer(mLeftDrawerView);
+        mDrawerLayout.closeDrawer(containerView);
+    }
+
     /*NOT WORKING WANT THE BACK BUTTON TO CLOSE THE RIGHT DRAWER*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -122,11 +125,13 @@ public class NavigationDrawerFragment extends Fragment {
             case android.R.id.home:
                 mDrawerToggle.onOptionsItemSelected(item);
 
+                /*
                 if (mDrawerLayout.isDrawerOpen(mLeftDrawerView)) {
                     mDrawerLayout.closeDrawer(mRightDrawerView);
                 } else if (mDrawerLayout.isDrawerOpen(mRightDrawerView)) {
                     mDrawerLayout.closeDrawer(mRightDrawerView);
                 }
+                */
                 break;
         }
         return super.onOptionsItemSelected(item);

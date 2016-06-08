@@ -11,6 +11,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,7 +21,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -64,6 +67,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
     private static final int NAME = 0;
     private static final int ARTIST = 1;
+    private static final int ALBUM = 3;
     private static final int ID = 2;
     public final String MATag = "MusicPlayerActivity";
 
@@ -83,6 +87,12 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
     public MyCustomBaseAdapter customBaseAdapter;
     public ArrayAdapter playlistSpinnerAdapter;
 
+    public  NavigationDrawerFragment drawerFragment;
+
+    PopupWindow popupWindow;
+    LayoutInflater popupLayoutInflator;
+    LinearLayout mainMusicLinearLayout;
+
     public MusicPlayerData mpData;
     boolean refreshing = false;
     private Toolbar toolbar;
@@ -100,10 +110,8 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         /*Setup the toolbar and navigation drawer*/
         toolbar = (Toolbar) findViewById(R.id.app_bar);
         setSupportActionBar(toolbar);
-        NavigationDrawerFragment drawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.fragment_navigation_drawer);
+        drawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.fragment_navigation_drawer);
         drawerFragment.setUp(R.id.fragment_navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
-        NavigationDrawerFragment drawerFragment2 = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.fragment_navigation_drawer2);
-        drawerFragment.setUp(R.id.fragment_navigation_drawer2, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
@@ -165,11 +173,12 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         trackDataArray = new ArrayList<>();
         trackDataArray.add(new ArrayList<String>()); //For Track Names
         trackDataArray.add(new ArrayList<String>()); //For Track Artists
+        trackDataArray.add(new ArrayList<String>()); //For Track Albums
         trackDataArray.add(new ArrayList<String>()); //For Track Ids
         songListResultsArrayList = new ArrayList<>();
 
         /*Initialize the mpData.currentTrackData array*/
-        mpData.currentTrackData = new String[3];
+        mpData.currentTrackData = new String[4];
         mpData.currentTrackData[ID] = "spotify:track:2TpxZ7JUBn3uw46aR7qd6V";
 
         //playlistListViewAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, trackDataArray.get(NAME));
@@ -339,6 +348,8 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         playStopButton.setOnClickListener(listener);
         forwardButton.setOnClickListener(listener);
         backButton.setOnClickListener(listener);
+
+        mainMusicLinearLayout = (LinearLayout)findViewById(R.id.linear_layout_music);
     }
 
     @Override
@@ -417,6 +428,12 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                     /*Not hosting AKA is a client*/
                     MyClientTask myTask = new MyClientTask(pref.getString("IpAddress", "Default"), Integer.parseInt(pref.getString("PortNumber", "Default")));
                     myTask.execute();
+
+                    popupLayoutInflator = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+                    ViewGroup container = (ViewGroup)popupLayoutInflator.inflate(R.layout.popup_connection_window,null);
+                    popupWindow = new PopupWindow(container,400,400,true);
+                    popupWindow.showAtLocation(mainMusicLinearLayout, Gravity.CENTER, 0, 0);
+
                 }
             }
         }
@@ -440,6 +457,14 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
     @Override
     public void onTemporaryError() {
         Log.d("MainActivity", "Temporary error occurred");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(drawerFragment.isVisible()){
+            drawerFragment.closeDrawer();
+        }
     }
 
     @Override
@@ -599,6 +624,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 Track track = gObj.fromJson(jsonString, Track.class);
                 mpData.currentTrackData[NAME] = track.name;
                 mpData.currentTrackData[ARTIST] = track.artists[0].name;
+                mpData.currentTrackData[ALBUM] = track.album.name;
                 mpData.currentLengthOfSong = track.duration_ms;
                 Log.d(MATag, "Successful retrieval");
             } catch (Exception myException) {
@@ -652,6 +678,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 PlaylistTracksPaging myPlaylistTracks = gObj.fromJson(jsonString, PlaylistTracksPaging.class);
                 trackDataArray.get(NAME).clear();
                 trackDataArray.get(ARTIST).clear();
+                trackDataArray.get(ALBUM).clear();
                 trackDataArray.get(ID).clear();
                 songListResultsArrayList.clear();
                 int totalAmtOfSongs = myPlaylistTracks.total;
@@ -659,9 +686,9 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 do {
                     for (int i = 0; i < myPlaylistTracks.items.length; i++) {
                         trackDataArray.get(NAME).add(myPlaylistTracks.items[i].track.name);
-                        trackDataArray.get(ARTIST).add(myPlaylistTracks.items[i].track.artists[0].name);
+                        trackDataArray.get(ARTIST).add(myPlaylistTracks.items[i].track.artists[0].name + " - " + myPlaylistTracks.items[i].track.album.name);
                         trackDataArray.get(ID).add(myPlaylistTracks.items[i].track.id);
-                        songListResultsArrayList.add(new SongListResults(myPlaylistTracks.items[i].track.name, myPlaylistTracks.items[i].track.artists[0].name));
+                        songListResultsArrayList.add(new SongListResults(myPlaylistTracks.items[i].track.name, myPlaylistTracks.items[i].track.artists[0].name + " - " + myPlaylistTracks.items[i].track.album.name));
                     }
                     totalAmtOfSongs -= 100;
                     if (totalAmtOfSongs > 0) {
@@ -836,15 +863,15 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
     public class SongListResults {
         private String songName = "";
-        private String artistName = "";
+        private String artistAlbumName = "";
 
         public SongListResults(String songName, String artistName) {
             this.songName = songName;
-            this.artistName = artistName;
+            this.artistAlbumName = artistName;
         }
 
         public String getArtistName() {
-            return artistName;
+            return artistAlbumName;
         }
 
         public String getSongName() {
@@ -959,7 +986,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         @Override
         protected void onPostExecute(Void result) {
             /*Recieved from the server*/
-
+            popupWindow.dismiss();
             super.onPostExecute(result);
         }
     }
@@ -976,6 +1003,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
                 while (true) {
                     Socket socket = serverSocket.accept();
+                    Toast.makeText(MusicScreen.this,"Client Connected", Toast.LENGTH_SHORT).show();
                     count++;
                     Calendar cal = Calendar.getInstance();
                     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");

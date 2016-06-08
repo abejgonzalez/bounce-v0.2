@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.Toast;
 
 import java.net.NetworkInterface;
 import java.util.Enumeration;
@@ -66,6 +67,8 @@ public class Settings extends AppCompatActivity {
                         Log.d("SettingsActivity", "Committing to preferences");
                     }
                 }
+
+                Toast.makeText(Settings.this, "Connection will occur in main screen", Toast.LENGTH_LONG).show();
             }
         });
         mHostSwitch = (Switch) findViewById(R.id.host_switch);

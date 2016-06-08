@@ -1,3 +1,10 @@
 <menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     tools:context="com.abraham.android.bounce.MusicScreen">
+>
+    <item
+        android:id="@+id/disable_connection"
+        android:title="Disable Any Connections"
+        android:icon="@drawable/play"></item>
+
 </menu>

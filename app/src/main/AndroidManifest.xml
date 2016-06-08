@@ -8,7 +8,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/base_logo"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
@@ -19,7 +19,6 @@
         </activity>
         <activity
             android:name=".LoginScreen"
-            android:label="@string/title_activity_login_screen"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
