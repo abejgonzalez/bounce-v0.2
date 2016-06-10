@@ -3,6 +3,7 @@ package com.gonza.abraham.bounce;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -87,7 +88,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
     //public ArrayAdapter playlistListViewAdapter;
     public MyCustomBaseAdapter customBaseAdapter;
-    public ArrayAdapter playlistSpinnerAdapter;
+    public ArrayAdapter playlistNavDrawAdapter;
 
     public  NavigationDrawerFragment drawerFragment;
 
@@ -98,6 +99,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
     public MusicPlayerData mpData;
     boolean refreshing = false;
     boolean shuffle_active = false;
+    boolean item_selected = false;
     private Toolbar toolbar;
     private Spinner spinner_nav;
 
@@ -141,31 +143,11 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
         /*Setup the playlist dropdown menu*/
         itemsInSpinner = new ArrayList<>();
-        playlistSpinnerAdapter = new ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, itemsInSpinner);
-
-        spinner_nav = (Spinner) findViewById(R.id.spinner_nav);
-        spinner_nav.setVisibility(View.VISIBLE);
-        spinner_nav.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (!refreshing) {
-                    final AdapterView<?> parentVar = parent;
-                    final int posVar = position;
-                    Log.d("Bounce", "Playlist Changed in Spinner");
-                    mpData.currentPlaylistId = playlistDataArray.get(ARTIST).get(position);
-
-                    new NetworkingThread().execute(State.GET_PLAYLIST_SONGS);
-                }
-                refreshing = false;
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-        spinner_nav.setAdapter(playlistSpinnerAdapter);
-
+        ListView navPlaylistListView = (ListView) findViewById(R.id.nav_drawer_playlist_listview);
+        playlistNavDrawAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itemsInSpinner);
+        navPlaylistListView.setAdapter(playlistNavDrawAdapter);
+        navPlaylistListView.setVisibility(View.VISIBLE);
+        navPlaylistListView.setOnItemClickListener(new DrawerItemClickListener());
 
         /*Sets up the global names in the playlists that are passed back and forth between threads*/
         playlistDataArray = new ArrayList<>();
@@ -194,10 +176,8 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
                 Log.d("Bounce", "Song selected in Listview");
 
-        /*Get the Id of the song in the list as well as the index*/
+                /*Get the Id of the song in the list as well as the index*/
                 mpData.currentTrackData[ID] = trackDataArray.get(ID).get(pos);
-                //mpData.currentIndexInChoiceList = pos;
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 for(int i = 0; i < mpData.choiceList.length; i++){
                     if(pos == mpData.choiceList[i]){
                         mpData.currentIndexInChoiceList = i;
@@ -395,6 +375,11 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         shuffleButton.setOnClickListener(listener);
 
         mainMusicLinearLayout = (LinearLayout)findViewById(R.id.linear_layout_music);
+
+        TextView song_name_txtview = (TextView) findViewById(R.id.song_name);
+        TextView artist_name_txtview = (TextView) findViewById(R.id.artist_name);
+        song_name_txtview.setSelected(true);
+        artist_name_txtview.setSelected(true);
     }
 
     @Override
@@ -678,7 +663,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 for (int i = 0; i < playlistDataArray.get(NAME).size(); i++) {
                     itemsInSpinner.add(playlistDataArray.get(NAME).get(i));
                 }
-                playlistSpinnerAdapter.notifyDataSetChanged();
+                playlistNavDrawAdapter.notifyDataSetChanged();
             }
         }
 
@@ -984,6 +969,9 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
             holder.txtSongName.setText(songListResultsArrayList.get(position).getSongName());
             holder.txtArtistName.setText(songListResultsArrayList.get(position).getArtistName());
 
+            holder.txtArtistName.setSelected(true);
+            holder.txtSongName.setSelected(true);
+
             return convertView;
         }
 
@@ -998,16 +986,33 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         public void onItemClick(AdapterView parent, View view, int position, long id) {
             Log.d(MATag, "NavDrawer Clicked");
             ListView drawerListView = (ListView) findViewById(R.id.drawer_listview);
-            String recievedString = (String) drawerListView.getItemAtPosition(position);
-            Intent sendIntent;
+            ListView navPlaylistListView = (ListView) findViewById(R.id.nav_drawer_playlist_listview);
 
+            if(parent == drawerListView) {
             /*Determine where to go when an item in the nav drawer is clicked*/
-            if (recievedString == "About") {
-                sendIntent = new Intent(getApplicationContext(), About.class);
-                startActivity(sendIntent);
-            } else if (recievedString == "Settings") {
-                sendIntent = new Intent(getApplicationContext(), Settings.class);
-                startActivityForResult(sendIntent, SETTING_REQUEST);
+                String recievedString = (String) drawerListView.getItemAtPosition(position);
+                Intent sendIntent;
+
+                if (recievedString == "About") {
+                    sendIntent = new Intent(getApplicationContext(), About.class);
+                    startActivity(sendIntent);
+                } else if (recievedString == "Settings") {
+                    sendIntent = new Intent(getApplicationContext(), Settings.class);
+                    startActivityForResult(sendIntent, SETTING_REQUEST);
+                }
+            }
+            else if (parent == navPlaylistListView){
+                if (!refreshing) {
+                    final AdapterView<?> parentVar = parent;
+                    final int posVar = position;
+                    Log.d("Bounce", "Playlist Changed in Spinner");
+                    mpData.currentPlaylistId = playlistDataArray.get(ARTIST).get(position);
+
+                    TextView playlistName = (TextView) findViewById(R.id.app_bar_textView);
+                    playlistName.setText((String)navPlaylistListView.getItemAtPosition(position));
+                    new NetworkingThread().execute(State.GET_PLAYLIST_SONGS);
+                }
+                refreshing = false;
             }
         }
     }

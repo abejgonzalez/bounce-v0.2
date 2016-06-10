@@ -14,6 +14,16 @@
         <ListView
             android:id="@+id/drawer_listview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"></ListView>
+            android:layout_height="wrap_content"></ListView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Playlists"/>
+
+        <ListView
+            android:id="@+id/nav_drawer_playlist_listview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"></ListView>
     </LinearLayout>
 </RelativeLayout>

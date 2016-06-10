@@ -30,7 +30,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_gravity="right"
-                android:layout_weight="1" />
+                android:layout_weight="1"/>
 
             <RelativeLayout
                 android:id="@+id/player_controls_relative_layout"
@@ -38,23 +38,37 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true">
 
-                <TextView
-                    android:id="@+id/song_name"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentTop="true"
-                    android:layout_centerHorizontal="true"
-                    android:text="Song Name"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
-
-                <TextView
-                    android:id="@+id/artist_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/song_name"
-                    android:layout_centerHorizontal="true"
-                    android:text="Artist Name"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
+                    android:orientation="vertical"
+                    android:id="@+id/song_artist_name_linear_layout"
+                    android:background="@color/primaryColorLight">
+                    <TextView
+                        android:id="@+id/song_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="Song Name"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit ="marquee_forever"
+                        android:scrollHorizontally="true"
+                        />
+                    <TextView
+                        android:id="@+id/artist_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@+id/song_name"
+                        android:layout_gravity="center"
+                        android:text="Artist Name"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit ="marquee_forever"
+                        android:scrollHorizontally="true"/>
+                </LinearLayout>
 
                 <RelativeLayout
                     android:id="@+id/play_buttons_relative_layout"
@@ -118,7 +132,10 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="false"
-                    android:layout_below="@+id/artist_name">
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:layout_below="@+id/song_artist_name_linear_layout"
+                    android:background="@color/primaryColorLight">
 
                     <TextView
                         android:id="@+id/song_point"
@@ -127,6 +144,8 @@
                         android:layout_alignParentLeft="true"
                         android:layout_alignParentStart="true"
                         android:layout_alignTop="@+id/song_length"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
                         android:padding="4sp"
                         android:text="0:00"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
