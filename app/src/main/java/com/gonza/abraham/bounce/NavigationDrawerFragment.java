@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -117,21 +118,13 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerLayout.closeDrawer(containerView);
     }
 
-    /*NOT WORKING WANT THE BACK BUTTON TO CLOSE THE RIGHT DRAWER*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         Toast.makeText(getActivity().getApplicationContext(), "Something selected", Toast.LENGTH_LONG).show();
+        Log.d("Bounce", "Option selected in the AppBar");
         switch (item.getItemId()) {
             case android.R.id.home:
                 mDrawerToggle.onOptionsItemSelected(item);
-
-                /*
-                if (mDrawerLayout.isDrawerOpen(mLeftDrawerView)) {
-                    mDrawerLayout.closeDrawer(mRightDrawerView);
-                } else if (mDrawerLayout.isDrawerOpen(mRightDrawerView)) {
-                    mDrawerLayout.closeDrawer(mRightDrawerView);
-                }
-                */
                 break;
         }
         return super.onOptionsItemSelected(item);

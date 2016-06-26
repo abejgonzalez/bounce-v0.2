@@ -3,7 +3,6 @@ package com.gonza.abraham.bounce;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -26,7 +25,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,41 +66,45 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class MusicScreen extends AppCompatActivity implements NavigationDrawerFragment.OnFragmentInteractionListener, PlayerNotificationCallback, ConnectionStateCallback {
 
+    /*Offsets for the arrays that hold the song/playlist info*/
     private static final int NAME = 0;
     private static final int ARTIST = 1;
-    private static final int ALBUM = 3;
     private static final int ID = 2;
-    public final String MATag = "MusicPlayerActivity";
+    private static final int ALBUM = 3;
 
-    /*Holds the items in the navigation bar*/
-    public String[] menuItems = {"About", "Settings"};
+    /*Tag for the Logs*/
+    public final String MATag = "MusicScreen";
+    public final String BTag = "Bounce";
 
-    /*Is the spinner that holds the playlist items*/
-    public ArrayList<String> itemsInSpinner;
+    /*Holds the setting items in the NavBar*/
+    public String[] menuItemsNavBar = {"About", "Settings"};
 
+    /*Array that holds the playlist items in the NavBar that holds the playlist items*/
+    public ArrayList<String> itemsInPlaylistNavBar;
     /*Holds the Playlist names and Ids*/
     public ArrayList<ArrayList<String>> playlistDataArray;
     /*Holds the TrackNames, Artists and the Ids*/
     public ArrayList<ArrayList<String>> trackDataArray;
     public ArrayList<SongListResults> songListResultsArrayList;
 
-    //public ArrayAdapter playlistListViewAdapter;
+    /*Adapter for the custom listView song objects*/
     public MyCustomBaseAdapter customBaseAdapter;
+    /*Adapter for the playlist items in NavBar*/
     public ArrayAdapter playlistNavDrawAdapter;
 
-    public  NavigationDrawerFragment drawerFragment;
-
+    /*NavBar fragment*/
+    public NavigationDrawerFragment drawerFragment;
+    
+    /*Items for the pop-up window (including inflator)*/
     PopupWindow popupWindow;
     LayoutInflater popupLayoutInflator;
     LinearLayout mainMusicLinearLayout;
 
+    /*Misc*/
     public MusicPlayerData mpData;
     boolean refreshing = false;
     boolean shuffle_active = false;
-    boolean item_selected = false;
     private Toolbar toolbar;
-    private Spinner spinner_nav;
-
     private int SETTING_REQUEST = 100;
     String message = "";
     ServerSocket serverSocket;
@@ -122,6 +124,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
         /*The initialization for the lists and the different elements of the layout*/
         initializeLayout();
+        
         /*Sets up the Spotify player (Authenticates and Sets up a login)(Makes sure that this portion is not done twice)*/
         if (savedInstanceState == null) {
             AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(MusicPlayerData.CLIENT_ID, AuthenticationResponse.Type.TOKEN, MusicPlayerData.REDIRECT_URI);
@@ -137,14 +140,14 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
          /*Setups up the slide-in menu*/
         ListView drawerListView = (ListView) findViewById(R.id.drawer_listview);
-        drawerListView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, menuItems));
+        drawerListView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, menuItemsNavBar));
         drawerListView.setVisibility(View.VISIBLE);
         drawerListView.setOnItemClickListener(new DrawerItemClickListener());
 
         /*Setup the playlist dropdown menu*/
-        itemsInSpinner = new ArrayList<>();
+        itemsInPlaylistNavBar = new ArrayList<>();
         ListView navPlaylistListView = (ListView) findViewById(R.id.nav_drawer_playlist_listview);
-        playlistNavDrawAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itemsInSpinner);
+        playlistNavDrawAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itemsInPlaylistNavBar);
         navPlaylistListView.setAdapter(playlistNavDrawAdapter);
         navPlaylistListView.setVisibility(View.VISIBLE);
         navPlaylistListView.setOnItemClickListener(new DrawerItemClickListener());
@@ -166,7 +169,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         mpData.currentTrackData = new String[4];
         mpData.currentTrackData[ID] = "spotify:track:2TpxZ7JUBn3uw46aR7qd6V";
 
-        //playlistListViewAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, trackDataArray.get(NAME));
+        /*Set up the listView for the playlistSongs*/
         ListView playlistListView;
         playlistListView = (ListView) findViewById(R.id.playlist_listview);
         customBaseAdapter = new MyCustomBaseAdapter(this, songListResultsArrayList);
@@ -174,7 +177,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         playlistListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                Log.d("Bounce", "Song selected in Listview");
+                Log.d(BTag + "/" + MATag, "Song selected from playlist in Listview");
 
                 /*Get the Id of the song in the list as well as the index*/
                 mpData.currentTrackData[ID] = trackDataArray.get(ID).get(pos);
@@ -183,11 +186,14 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                         mpData.currentIndexInChoiceList = i;
                     }
                 }
+
+                /*Change the image of the play/stop button*/
                 ImageButton playButton = (ImageButton) findViewById(R.id.play_stop_button);
                 playButton.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
 
-        /*Play song and fill out the song data*/
+                /*Play song and fill out the song data*/
                 mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
+
                 /*Get the Id of the song in the list as well as the index*/
                 /*Get the UserId using the mpData.statemachine in the other thread*/
                 new NetworkingThread().execute(State.GET_SONG_DATA);
@@ -238,7 +244,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
             }
         });
 
-
+        /*The buttons on the Music Bar*/
         final ImageButton playStopButton = (ImageButton) findViewById(R.id.play_stop_button);
         final ImageButton forwardButton = (ImageButton) findViewById(R.id.forward_button);
         final ImageButton backButton = (ImageButton) findViewById(R.id.back_button);
@@ -249,7 +255,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
             @Override
             public void onClick(View v) {
                 if (v == playStopButton) {
-                    Log.d("Bounce", "Play Stop Button Clicked");
+                    Log.d(BTag + "/" + MATag, "Play Stop Button Clicked");
                     /*Specifies the button for the rest of the program*/
                     final ImageButton playStopButton = (ImageButton) findViewById(R.id.play_stop_button);
 
@@ -277,93 +283,97 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                         mpData.isPlayingMusic = false;
                     }
                 } else if (v == forwardButton) {
-                    Log.d("Bounce", "Forward Button Clicked");
+                    Log.d(BTag + "/" + MATag, "Forward Button Clicked");
 
                      /*Moves to the next song in the list and plays it*/
-
-                    if (mpData.currentIndexInChoiceList < trackDataArray.get(NAME).size() - 1) {
-                        mpData.currentIndexInChoiceList = ++mpData.currentIndexInChoiceList;
-                        mpData.currentTrackData[ID] = trackDataArray.get(ID).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
-                        mpData.currentTrackData[NAME] = trackDataArray.get(NAME).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
-                        mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
+                    if (mpData.isSongStarted) {
+                        if (mpData.currentIndexInChoiceList < trackDataArray.get(NAME).size() - 1) {
+                            mpData.currentIndexInChoiceList = ++mpData.currentIndexInChoiceList;
+                            mpData.currentTrackData[ID] = trackDataArray.get(ID).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
+                            mpData.currentTrackData[NAME] = trackDataArray.get(NAME).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
+                            mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
                         /*Get the UserId using the mpData.statemachine in the other thread*/
-                        new NetworkingThread().execute(State.GET_SONG_DATA);
-                    } else {
+                            new NetworkingThread().execute(State.GET_SONG_DATA);
+                        } else {
                         /*This starts the first song if you are at the last song in the list*/
-                        mpData.currentIndexInChoiceList = 0;
-                        mpData.currentTrackData[ID] = trackDataArray.get(ID).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
-                        mpData.currentTrackData[NAME] = trackDataArray.get(NAME).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
-                        mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
+                            mpData.currentIndexInChoiceList = 0;
+                            mpData.currentTrackData[ID] = trackDataArray.get(ID).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
+                            mpData.currentTrackData[NAME] = trackDataArray.get(NAME).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
+                            mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
                         /*Get the UserId using the mpData.statemachine in the other thread*/
-                        new NetworkingThread().execute(State.GET_SONG_DATA);
-                    }
-                    MusicScreen.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            playStopButton.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
+                            new NetworkingThread().execute(State.GET_SONG_DATA);
                         }
-                    });
+                        MusicScreen.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                playStopButton.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
+                            }
+                        });
+                    }
                 } else if (v == backButton) {
-                    Log.d("Bounce", "Back Button clicked");
-                    final SeekBar songSeekBar = (SeekBar) findViewById(R.id.player_seek_bar);
-                    final TextView songName = (TextView) findViewById(R.id.song_name);
-                    final TextView artistName = (TextView) findViewById(R.id.artist_name);
-                    final TextView songLengthTotal = (TextView) findViewById(R.id.song_length);
+                    Log.d(BTag + "/" + MATag, "Back Button clicked");
+
+                    if (mpData.isSongStarted) {
+                        final SeekBar songSeekBar = (SeekBar) findViewById(R.id.player_seek_bar);
+                        final TextView songName = (TextView) findViewById(R.id.song_name);
+                        final TextView artistName = (TextView) findViewById(R.id.artist_name);
+                        final TextView songLengthTotal = (TextView) findViewById(R.id.song_length);
 
                      /*Enable click once to go to the beginning and a double-click to go back a song*/
-                    if (mpData.iPointBarValue >= 20) {
-                        mpData.iPointBarValue = 0;
-                        mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
-                        songSeekBar.setProgress(0);
-                        mpData.isPlayingMusic = true;
-                        mpData.isSongStarted = true;
-                    } else if (mpData.currentIndexInChoiceList > 0) {
+                        if (mpData.iPointBarValue >= 20) {
+                            mpData.iPointBarValue = 0;
+                            mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
+                            songSeekBar.setProgress(0);
+                            mpData.isPlayingMusic = true;
+                            mpData.isSongStarted = true;
+                        } else if (mpData.currentIndexInChoiceList > 0) {
                          /*Moves the index back and goes to the previous song in the list*/
-                        mpData.currentIndexInChoiceList = --mpData.currentIndexInChoiceList;
-                        mpData.currentTrackData[ID] = trackDataArray.get(ID).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
-                        mpData.currentTrackData[NAME] = trackDataArray.get(NAME).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
-                        mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
+                            mpData.currentIndexInChoiceList = --mpData.currentIndexInChoiceList;
+                            mpData.currentTrackData[ID] = trackDataArray.get(ID).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
+                            mpData.currentTrackData[NAME] = trackDataArray.get(NAME).get(mpData.choiceList[mpData.currentIndexInChoiceList]);
+                            mpData.mPlayer.play("spotify:track:" + mpData.currentTrackData[ID]);
                         /*Get the UserId using the mpData.statemachine in the other thread*/
-                        new NetworkingThread().execute(State.GET_SONG_DATA);
-                    }
-                    MusicScreen.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            playStopButton.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
+                            new NetworkingThread().execute(State.GET_SONG_DATA);
                         }
-                    });
+                        MusicScreen.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                playStopButton.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
+                            }
+                        });
+                    }
                 }
-                else if (v == shuffleButton){
-                    Log.d("Bounce", "Shuffle Button clicked");
+                else if (v == shuffleButton) {
+                    Log.d(BTag + "/" + MATag, "Shuffle Button clicked");
 
-                    if(!shuffle_active){
-                        shuffleButton.setImageResource(R.drawable.ic_shuffle_blue_24dp);
-                        Log.d("Bounce", "Shuffle Enabled");
-                        /*Turn on shuffle by randomizing choice list*/
-                        Random rnd = ThreadLocalRandom.current();
-                        for (int i = mpData.choiceList.length - 1; i > 0; i--)
-                        {
-                            int index = rnd.nextInt(i + 1);
-                            // Simple swap
-                            int a = mpData.choiceList[index];
-                            mpData.choiceList[index] = mpData.choiceList[i];
-                            mpData.choiceList[i] = a;
+                    if (mpData.isSongStarted) {
+                        if (!shuffle_active) {
+                            shuffleButton.setImageResource(R.drawable.ic_shuffle_blue_24dp);
+                            Log.d(BTag + "/" + MATag, "Shuffle Enabled");
+
+                            /*Turn on shuffle by randomizing choice list*/
+                            Random rnd = ThreadLocalRandom.current();
+                            for (int i = mpData.choiceList.length - 1; i > 0; i--) {
+                                int index = rnd.nextInt(i + 1);
+                                int a = mpData.choiceList[index];
+                                mpData.choiceList[index] = mpData.choiceList[i];
+                                mpData.choiceList[i] = a;
+                            }
+
+                            shuffle_active = true;
+                        } else {
+                            Log.d(BTag + "/" + MATag, "Shuffle Disabled");
+                            shuffleButton.setImageResource(R.drawable.ic_shuffle_black_24dp);
+                            /*Re-Index the current list*/
+                            mpData.currentIndexInChoiceList = mpData.choiceList[mpData.currentIndexInChoiceList];
+
+                            /*Turn off shuffle by ordering the choice list*/
+                            for (int i = 0; i < mpData.choiceList.length; i++) {
+                                mpData.choiceList[i] = i;
+                            }
+
+                            shuffle_active = false;
                         }
-
-                        shuffle_active = true;
-                    }
-                    else{
-                        Log.d("Bounce", "Shuffle Disabled");
-                        shuffleButton.setImageResource(R.drawable.ic_shuffle_black_24dp);
-                        /*Re-Index the current list*/
-                        mpData.currentIndexInChoiceList = mpData.choiceList[mpData.currentIndexInChoiceList];
-
-                        /*Turn off shuffle by ordering the choice list*/
-                        for (int i = 0; i < mpData.choiceList.length; i++){
-                            mpData.choiceList[i] = i;
-                        }
-
-                        shuffle_active = false;
                     }
                 }
             }
@@ -428,7 +438,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                         SongThread mySongThread = new SongThread();
                         mySongThread.Init();
                         mySongThread.start();
-                        Log.d("Bounce", "Refreshing Playlists");
+                        Log.d(BTag + "/" + MATag, "Refreshing Playlists");
                         refreshing = true;
                         /*Use the mpData.statemachine in the NetworkThread to retrieve the playlists*/
                         /*Get the UserId using the mpData.statemachine in the other thread*/
@@ -438,7 +448,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
                     @Override
                     public void onError(Throwable throwable) {
-                        Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
+                        Log.e(BTag + "/" + MATag, "Could not initialize player: " + throwable.getMessage());
                     }
                 });
             }
@@ -446,19 +456,23 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         else if(requestCode == SETTING_REQUEST){
             SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 
-            /*Find out if the Activity wants to connect or not*/
+            /*Find out if the Activity wants to connect to another phone or not*/
             if(pref.getBoolean("DoConnection",false)){
+                Log.d(BTag + "/" + MATag, "Connection Settings requested");
                 /*Create a connection*/
                 if(pref.getBoolean("Host", false)){
+                    Log.d(BTag + "/" + MATag, "Create host");
                     /*Hosting AKA is a server*/
                     Thread socketServerThread = new Thread(new SocketServerThread());
                     socketServerThread.start();
                 }
                 else{
+                    Log.d(BTag + "/" + MATag, "Create client");
                     /*Not hosting AKA is a client*/
                     MyClientTask myTask = new MyClientTask(pref.getString("IpAddress", "Default"), Integer.parseInt(pref.getString("PortNumber", "Default")));
                     myTask.execute();
 
+                    Log.d(BTag + "/" + MATag, "Pop-Up initiated");
                     popupLayoutInflator = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
                     ViewGroup container = (ViewGroup)popupLayoutInflator.inflate(R.layout.popup_connection_window,null);
                     popupWindow = new PopupWindow(container,400,400,true);
@@ -523,7 +537,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
             }
         }
         super.onDestroy();
-        Log.d("MainActivity", "Spotify Player destroyed");
+        Log.d(BTag + "/" + MATag, "Spotify Player destroyed");
     }
 
     @Override
@@ -623,6 +637,8 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
         @Override
         protected void onPostExecute(State state) {
             if (state == State.GET_SONG_DATA) {
+                Log.d(BTag + "/" + MATag, "Song Data Requested");
+
                 final SeekBar songSeekBar = (SeekBar) findViewById(R.id.player_seek_bar);
                 final TextView songName = (TextView) findViewById(R.id.song_name);
                 final TextView artistName = (TextView) findViewById(R.id.artist_name);
@@ -635,24 +651,23 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 mpData.isPlayingMusic = true;
                 mpData.isSongStarted = true;
             } else if (state == State.GET_PLAYLIST_SONGS) {
-                //playlistListViewAdapter.notifyDataSetChanged();
+                Log.d(BTag + "/" + MATag, "Plylst Songs requested");
                 customBaseAdapter.notifyDataSetChanged();
 
                 /*Generate the choice array*/
                 mpData.choiceList = new int[trackDataArray.get(NAME).size()];
                 if(!shuffle_active){
-                        /*Make the choice list in order*/
+                    /*Make the choice list in order*/
                     for (int i = 0; i < mpData.choiceList.length; i++){
                         mpData.choiceList[i] = i;
                     }
                 }
                 else{
-                        /*Make the choice list shuffled*/
+                    /*Make the choice list shuffled*/
                     Random rnd = ThreadLocalRandom.current();
                     for (int i = mpData.choiceList.length - 1; i > 0; i--)
                     {
                         int index = rnd.nextInt(i + 1);
-                        // Simple swap
                         int a = mpData.choiceList[index];
                         mpData.choiceList[index] = mpData.choiceList[i];
                         mpData.choiceList[i] = a;
@@ -661,7 +676,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
             } else if (state == State.GET_PLAYLISTS) {
                 /*Add the pertinient data to the ListView*/
                 for (int i = 0; i < playlistDataArray.get(NAME).size(); i++) {
-                    itemsInSpinner.add(playlistDataArray.get(NAME).get(i));
+                    itemsInPlaylistNavBar.add(playlistDataArray.get(NAME).get(i));
                 }
                 playlistNavDrawAdapter.notifyDataSetChanged();
             }
@@ -669,65 +684,80 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
 
         private void getSongData() {
             try {
-                Log.d(MATag, "Retrieving Song Data");
+                Log.d(BTag + "/" + MATag, "Retrieving Song Data");
+
+                /*Query the Spotify API*/
                 String jsonString;
                 jsonString = httpGet("https://api.spotify.com/v1/tracks/" + mpData.currentTrackData[ID], null);
                 Gson gObj = new Gson();
                 Track track = gObj.fromJson(jsonString, Track.class);
+
+                /*Assign specified data to the pertinent arrays*/
                 mpData.currentTrackData[NAME] = track.name;
                 mpData.currentTrackData[ARTIST] = track.artists[0].name;
                 mpData.currentTrackData[ALBUM] = track.album.name;
                 mpData.currentLengthOfSong = track.duration_ms;
-                Log.d(MATag, "Successful retrieval");
+                Log.d(BTag + "/" + MATag, "Successful retrieval");
             } catch (Exception myException) {
-                                /*An error occured when running the mpData.statemachine*/
-                Log.d(MATag, "Failure to retrieve song data");
+                /*An error occured when running the mpData.statemachine*/
+                Log.d(BTag + "/" + MATag, "Failure to retrieve song data");
             }
         }
 
         private void getPlaylist() {
             try {
-                Log.d(MATag, "Retrieving Playlist Data");
+                Log.d(BTag + "/" + MATag, "Retrieving Playlist Data");
+
+                /*Query the Spotify API*/
                 String jsonString;
                 jsonString = httpGet("https://api.spotify.com/v1/users/" + mpData.currentUserId + "/playlists", mpData.accessToken);
                 Gson gObj = new Gson();
                 UsersPlaylistsPaging myPlaylists = gObj.fromJson(jsonString, UsersPlaylistsPaging.class);
+
+                /*Assign the specified data to the pertinent arrays*/
                 playlistDataArray.get(NAME).clear();
                 playlistDataArray.get(1).clear();
-
                 for (int i = 0; i < myPlaylists.items.length; i++) {
                     playlistDataArray.get(NAME).add(myPlaylists.items[i].name);
                     playlistDataArray.get(1).add(myPlaylists.items[i].id);
                 }
-                Log.d(MATag, "Successful retrieval");
+                Log.d(BTag + "/" + MATag, "Successful retrieval");
             } catch (Exception myException) {
-                                /*An error occured when running the mpData.statemachine*/
-                Log.d(MATag, "Failure to retrieve playlist data");
+                /*An error occured when running the mpData.statemachine*/
+                Log.d(BTag + "/" + MATag, "Failure to retrieve playlist data");
             }
         }
 
         private void getUserID() {
             try {
-                Log.d(MATag, "Retrieving User ID");
+                Log.d(BTag + "/" + MATag, "Retrieving User ID");
+
+                /*Query the Spotify API*/
                 String jsonString;
                 jsonString = httpGet("https://api.spotify.com/v1/me", mpData.accessToken);
                 Gson gObj = new Gson();
                 User user = gObj.fromJson(jsonString, User.class);
+
+                /*Assign the User Id*/
                 mpData.currentUserId = user.id;
-                Log.d(MATag, "Successful retrieval");
+                Log.d(BTag + "/" + MATag, "Successful retrieval");
             } catch (Exception myException) {
                 /*An error occured when running the mpData.statemachine*/
-                Log.d(MATag, "Failure to retrieve User ID");
+                Log.d(BTag + "/" + MATag, "Failure to retrieve User ID");
             }
         }
 
         private void getPlaylistSongs() {
             try {
-                Log.d(MATag, "Retrieving playlist songs");
+                Log.d(BTag + "/" + MATag, "Retrieving playlist songs");
+
+                /*Query the Spotify API*/
                 String jsonString;
                 jsonString = httpGet("https://api.spotify.com/v1/users/" + mpData.currentUserId + "/playlists/" + mpData.currentPlaylistId + "/tracks", mpData.accessToken);
                 Gson gObj = new Gson();
                 PlaylistTracksPaging myPlaylistTracks = gObj.fromJson(jsonString, PlaylistTracksPaging.class);
+
+                /*Assign the data to the pertinent arrays*/
                 trackDataArray.get(NAME).clear();
                 trackDataArray.get(ARTIST).clear();
                 trackDataArray.get(ALBUM).clear();
@@ -749,10 +779,10 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                         myPlaylistTracks = gObj.fromJson(jsonString, PlaylistTracksPaging.class);
                     }
                 } while (totalAmtOfSongs > 0);
-                Log.d(MATag, "Successful retrieval");
+                Log.d(BTag + "/" + MATag, "Successful retrieval");
             } catch (Exception myException) {
                 /*An error occured when running the mpData.statemachine*/
-                Log.d(MATag, "Failure retrieving playlist songs");
+                Log.d(BTag + "/" + MATag, "Failure retrieving playlist songs");
             }
         }
 
@@ -882,7 +912,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                     if (playerState.playing) {
                         if (mpData.isPlayingMusic) {
                             if (!mpData.isSliderMoving) {
-                                Log.d(MATag, "Seekbar Updated with new position");
+                                Log.d(BTag + "/" + MATag, "Seekbar Updated with new position");
                                 /*Move the seekbar to the position that the song is at*/
                                 MusicScreen.this.runOnUiThread(new Runnable() {
                                     @Override
@@ -984,7 +1014,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView parent, View view, int position, long id) {
-            Log.d(MATag, "NavDrawer Clicked");
+            Log.d(BTag + "/" + MATag, "NavDrawer Item Clicked");
             ListView drawerListView = (ListView) findViewById(R.id.drawer_listview);
             ListView navPlaylistListView = (ListView) findViewById(R.id.nav_drawer_playlist_listview);
 
@@ -1005,7 +1035,7 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                 if (!refreshing) {
                     final AdapterView<?> parentVar = parent;
                     final int posVar = position;
-                    Log.d("Bounce", "Playlist Changed in Spinner");
+                    Log.d(BTag + "/" + MATag, "New Playlist Selected in ListView");
                     mpData.currentPlaylistId = playlistDataArray.get(ARTIST).get(position);
 
                     TextView playlistName = (TextView) findViewById(R.id.app_bar_textView);
@@ -1091,7 +1121,6 @@ public class MusicScreen extends AppCompatActivity implements NavigationDrawerFr
                     socketServerReplyThread.run();
                 }
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

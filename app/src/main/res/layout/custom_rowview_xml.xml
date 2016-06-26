@@ -8,21 +8,25 @@
         android:id="@+id/song_name_element"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="17sp"
         android:singleLine="true"
-        android:ellipsize="marquee"
-        android:marqueeRepeatLimit ="marquee_forever"
+        android:ellipsize="end"
         android:scrollHorizontally="true"
-
+        android:layout_marginLeft="5sp"
+        android:layout_marginTop="5sp"
+        android:layout_marginRight="5sp"
         />
 
     <TextView
         android:id="@+id/artist_name_element"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
+        android:textSize="13sp"
+        android:textColor="@color/grey"
         android:singleLine="true"
-        android:ellipsize="marquee"
-        android:marqueeRepeatLimit ="marquee_forever"
-        android:scrollHorizontally="true"/>
+        android:ellipsize="end"
+        android:scrollHorizontally="true"
+        android:layout_marginLeft="5sp"
+        android:layout_marginBottom="5sp"
+        android:layout_marginRight="5sp"/>
 </LinearLayout>
